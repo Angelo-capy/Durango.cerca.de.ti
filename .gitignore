@@ -1,0 +1,30 @@
+# Dependencias
+node_modules/
+
+# Compilados y builds
+dist/
+build/
+.vite/
+**/dist/
+**/build/
+**/.vite/
+
+# Configuración y APIs (NUNCA SUBIR)
+.env
+.env.local
+.env.*
+**/.env
+**/.env.*
+
+# Archivos específicos de Claude y agentes
+.claude/
+.agents/
+skills-lock.json
+
+# Sistema y logs
+.DS_Store
+*.log
+
+# Cargas / Uploads locales
+backend/uploads/*
+!backend/uploads/.gitkeep

@@ -1,0 +1,130 @@
+/* =============================================
+   DURANGO CERCA DE TI — Sistema de diseño base
+   ============================================= */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Variables CSS globales del design system */
+:root {
+  /* Paleta principal */
+  --color-primary:       #1e3f72;   /* navy-700 — color de marca */
+  --color-primary-dark:  #162d54;   /* navy-800 */
+  --color-primary-light: #3a6eaa;   /* navy-500 */
+  --color-primary-faint: #f0f4fa;   /* navy-50  */
+
+  /* Superficies */
+  --color-surface:       #ffffff;
+  --color-surface-alt:   #f9fafb;
+  --color-border:        #e5e7eb;
+
+  /* Texto */
+  --color-text-primary:  #111827;
+  --color-text-secondary:#4b5563;
+  --color-text-disabled: #9ca3af;
+
+  /* WhatsApp — solo para ese botón */
+  --color-whatsapp:      #25D366;
+  --color-whatsapp-dark: #128C7E;
+
+  /* Tipografía */
+  --font-body: 'Inter', system-ui, sans-serif;
+
+  /* Espaciado táctil mínimo */
+  --tap-target: 48px;
+
+  /* Radios */
+  --radius-card:  12px;
+  --radius-panel: 20px;
+  --radius-pill:  999px;
+
+  /* Sombras */
+  --shadow-card:  0 2px 8px 0 rgba(14,30,56,0.08);
+  --shadow-fab:   0 4px 20px 0 rgba(14,30,56,0.25);
+  --shadow-panel: 0 -4px 32px 0 rgba(14,30,56,0.18);
+
+  /* Altura del tab bar inferior */
+  --tab-bar-height: 68px;
+}
+
+/* Base global */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 18px;         /* mínimo WCAG para usuarios 50+ */
+  line-height: 1.6;
+  color: var(--color-text-primary);
+  background-color: var(--color-surface-alt);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Foco visible — accesibilidad por teclado */
+:focus-visible {
+  outline: 3px solid var(--color-primary-light);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Scrollbar discreta */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: var(--radius-pill);
+}
+
+/* Utilidad para padding inferior en pantallas con tab bar */
+.pb-tab-bar {
+  padding-bottom: calc(var(--tab-bar-height) + 16px);
+}
+
+/* Animación del indicador "pensando..." del chatbot */
+@keyframes pulseDot {
+  0%, 80%, 100% { transform: scale(0); opacity: 0.4; }
+  40%           { transform: scale(1); opacity: 1;   }
+}
+
+.dot-1 { animation: pulseDot 1.4s ease-in-out infinite 0s; }
+.dot-2 { animation: pulseDot 1.4s ease-in-out infinite 0.2s; }
+.dot-3 { animation: pulseDot 1.4s ease-in-out infinite 0.4s; }
+
+/* Slide-up para panel/modal */
+@keyframes slideUp {
+  from { transform: translateY(100%); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+.animate-slide-up {
+  animation: slideUp 0.3s cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.2s ease-out both;
+}
