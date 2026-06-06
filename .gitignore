@@ -16,6 +16,9 @@ build/
 **/.env
 **/.env.*
 
+# Guía de Claude / Agente
+CLAUDE.md
+
 # Archivos específicos de Claude y agentes
 .claude/
 .agents/
