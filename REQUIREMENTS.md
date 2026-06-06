@@ -27,7 +27,7 @@ Vitrina digital local para los comercios de Durango, México. Una app web donde 
 
 ### 3.1 Comerciante (perfil primario)
 - Dueño de micro/pequeño/mediano negocio en Durango.
-- Edad típica: **50+ años**, no nativo digital.
+- Edad típica: a partir de los 40, no nativo digital.
 - Usa WhatsApp, a veces Facebook, rara vez Instagram.
 - Necesita una experiencia con **mínima fricción**: pocos pasos, botones grandes, lenguaje claro, sin jerga.
 - Quiere: que la gente lo encuentre, tener un "perfil" simple, recibir contacto por WhatsApp.
@@ -98,7 +98,7 @@ Implicación de diseño: el chatbot no es un accesorio, es el **diferenciador ce
 Entidad `comercio`:
 - `id` (UUID)
 - `nombre` (string, requerido)
-- `descripcion_breve` (text, máx. 280 caracteres)
+- `descripcion` (text, máx. 280 caracteres)
 - `colaboradores` (string o array — quiénes trabajan ahí)
 - `ubicacion` (lat, lng) + `direccion_texto` (string)
 - `horario` (estructura simple: días + apertura/cierre, o texto libre para MVP)
@@ -119,21 +119,20 @@ Entidad `usuario`:
 ## 8. Requerimientos no funcionales
 
 ### 8.1 Usabilidad (ULTRA fácil — accesibilidad para 50+)
-- **RNF-01**: Tipografía base mínimo 18px, botones de al menos 48x48px.
-- **RNF-02**: Contraste alto (WCAG AA mínimo).
-- **RNF-03**: Sin jerga técnica en copys; lenguaje coloquial mexicano.
-- **RNF-04**: Cada acción del comerciante debe ser ≤ 3 toques desde la pantalla principal.
-- **RNF-05**: Mensajes de error claros y accionables ("no encontramos tu ubicación, escribe tu colonia aquí").
+- **RNF-01**: Contraste alto (WCAG AA mínimo).
+- **RNF-02**: Sin jerga técnica en copys; lenguaje espanol.
+- **RNF-03**: Cada acción del comerciante debe ser ≤ 3 toques desde la pantalla principal.
+- **RNF-04**: Mensajes de error claros y accionables ("no encontramos tu ubicación, escribe tu colonia aquí").
 
 ### 8.2 Performance
-- **RNF-06**: Carga inicial < 3 segundos en conexión móvil promedio.
-- **RNF-07**: Respuesta del chatbot < 5 segundos (mostrar indicador "pensando…").
+- **RNF-05**: Carga inicial < 3 segundos en conexión móvil promedio.
+- **RNF-06**: Respuesta del chatbot < 5 segundos (mostrar indicador "pensando…").
 
 ### 8.3 Seguridad básica
-- **RNF-08**: Auth solo vía Google OAuth (no manejamos contraseñas).
-- **RNF-09**: API keys (Maps, Gemini) en variables de entorno, nunca en el repo.
-- **RNF-10**: Validación server-side de que solo el dueño puede editar su comercio.
-- **RNF-11**: Subida de imágenes con límite de tamaño (ej. 5MB) y tipos permitidos.
+- **RNF-07**: Auth solo vía Google OAuth (no manejamos contraseñas).
+- **RNF-08**: API keys (Maps, Gemini) en variables de entorno, nunca en el repo.
+- **RNF-09**: Validación server-side de que solo el dueño puede editar su comercio.
+- **RNF-10**: Subida de imágenes con límite de tamaño (ej. 5MB) y tipos permitidos.
 
 ---
 
