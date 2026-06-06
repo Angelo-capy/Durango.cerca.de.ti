@@ -6,17 +6,42 @@ import { MapPin, AlertCircle } from 'lucide-react';
 
 const DURANGO_CENTER = { lat: 24.0277, lng: -104.6532 };
 
+// Fuera del componente para que la referencia no cambie entre renders
+const LIBRARIES = ['places'];
+
 const ESTILOS_MAPA = [
   { featureType: 'poi', stylers: [{ visibility: 'off' }] },
   { featureType: 'transit', stylers: [{ visibility: 'off' }] },
   { featureType: 'road', elementType: 'labels.icon', stylers: [{ visibility: 'off' }] },
 ];
 
+const TIPOS_LEGIBLES = {
+  restaurant: 'Restaurante', food: 'Comida', store: 'Tienda',
+  pharmacy: 'Farmacia', health: 'Salud', clothing_store: 'Ropa',
+  hardware_store: 'Ferretería', supermarket: 'Supermercado',
+  bakery: 'Panadería', cafe: 'Café', bar: 'Bar',
+  beauty_salon: 'Estética', gym: 'Gimnasio',
+  hospital: 'Hospital', bank: 'Banco', gas_station: 'Gasolinera',
+};
+
+function formatearTipos(types = []) {
+  for (const t of types) {
+    if (TIPOS_LEGIBLES[t]) return TIPOS_LEGIBLES[t];
+  }
+  return 'Comercio local';
+}
+
+function estrellas(rating) {
+  const llenas = Math.round(rating);
+  return '★'.repeat(llenas) + '☆'.repeat(5 - llenas);
+}
+
 export default function MapaPage() {
   const MAPS_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '';
   const { isLoaded, loadError } = useJsApiLoader({
     googleMapsApiKey: MAPS_KEY,
     language: 'es',
+    libraries: LIBRARIES,
   });
 
   const { comercios } = useComerciosList();
@@ -25,9 +50,29 @@ export default function MapaPage() {
   const [ubicacion, setUbicacion] = useState(null);
   const [mensajeGeo, setMensajeGeo] = useState(null);
   const [seleccionado, setSeleccionado] = useState(null);
-  const mapRef = useRef(null);
+  const [seleccionadoGoogle, setSeleccionadoGoogle] = useState(null);
+  const [lugaresGoogle, setLugaresGoogle] = useState([]);
 
-  // Geolocalización solo al montar — useRef no causa re-renders extra
+  const mapRef = useRef(null);
+  const placesServiceRef = useRef(null);
+
+  function buscarLugaresCercanos(service, centro) {
+    service.nearbySearch(
+      {
+        location: new window.google.maps.LatLng(centro.lat, centro.lng),
+        radius: 1000,
+      },
+      (results, status) => {
+        if (
+          status === window.google.maps.places.PlacesServiceStatus.OK &&
+          Array.isArray(results)
+        ) {
+          setLugaresGoogle(results.filter(r => r.geometry?.location));
+        }
+      }
+    );
+  }
+
   useEffect(() => {
     if (!navigator.geolocation) {
       setMensajeGeo('Tu navegador no admite geolocalización. Mostrando el centro de Durango.');
@@ -38,6 +83,9 @@ export default function MapaPage() {
         const pos2 = { lat: pos.coords.latitude, lng: pos.coords.longitude };
         setUbicacion(pos2);
         mapRef.current?.panTo(pos2);
+        if (placesServiceRef.current) {
+          buscarLugaresCercanos(placesServiceRef.current, pos2);
+        }
       },
       () => {
         setMensajeGeo('No encontramos tu ubicación. El mapa muestra el centro de Durango.');
@@ -45,7 +93,22 @@ export default function MapaPage() {
     );
   }, []);
 
-  const onMapLoad = useCallback(map => { mapRef.current = map; }, []);
+  const onMapLoad = useCallback(map => {
+    mapRef.current = map;
+    const service = new window.google.maps.places.PlacesService(map);
+    placesServiceRef.current = service;
+    buscarLugaresCercanos(service, DURANGO_CENTER);
+  }, []);
+
+  function seleccionarComercio(c) {
+    setSeleccionadoGoogle(null);
+    setSeleccionado(c);
+  }
+
+  function seleccionarGoogle(lugar) {
+    setSeleccionado(null);
+    setSeleccionadoGoogle(lugar);
+  }
 
   if (loadError) {
     return (
@@ -76,6 +139,21 @@ export default function MapaPage() {
         </div>
       )}
 
+      {/* Leyenda de marcadores */}
+      <div
+        className="absolute z-10 bg-white/95 backdrop-blur-sm rounded-xl shadow-card px-3 py-2 flex flex-col gap-1.5"
+        style={{ top: mensajeGeo ? 60 : 12, right: 12 }}
+      >
+        <div className="flex items-center gap-2">
+          <span className="w-3.5 h-3.5 rounded-full flex-shrink-0" style={{ background: '#1e3f72', boxShadow: '0 0 0 2px white, 0 0 0 3px #1e3f72' }} />
+          <span className="text-[12px] text-gray-700 font-semibold">En la plataforma</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="w-3.5 h-3.5 rounded-full flex-shrink-0" style={{ background: '#9ca3af', boxShadow: '0 0 0 2px white, 0 0 0 3px #9ca3af' }} />
+          <span className="text-[12px] text-gray-500">En Google Maps</span>
+        </div>
+      </div>
+
       <GoogleMap
         mapContainerStyle={{ width: '100%', height: '100%' }}
         center={ubicacion || DURANGO_CENTER}
@@ -103,34 +181,66 @@ export default function MapaPage() {
               strokeWeight: 2.5,
             }}
             title="Tu ubicación"
+            zIndex={10}
           />
         )}
 
-        {/* Marcadores de comercios */}
+        {/* Marcadores de Google Places — gris, más pequeños, detrás */}
+        {lugaresGoogle.map(lugar => (
+          <MarkerF
+            key={lugar.place_id}
+            position={{
+              lat: lugar.geometry.location.lat(),
+              lng: lugar.geometry.location.lng(),
+            }}
+            onClick={() => seleccionarGoogle(lugar)}
+            title={lugar.name}
+            icon={{
+              path: window.google.maps.SymbolPath.CIRCLE,
+              scale: 7,
+              fillColor: '#9ca3af',
+              fillOpacity: 0.9,
+              strokeColor: '#ffffff',
+              strokeWeight: 2,
+            }}
+            zIndex={1}
+          />
+        ))}
+
+        {/* Marcadores de la plataforma — azul marino, más prominentes, encima */}
         {comercios.map(c =>
           c.lat && c.lng ? (
             <MarkerF
               key={c.id}
               position={{ lat: c.lat, lng: c.lng }}
-              onClick={() => setSeleccionado(c)}
+              onClick={() => seleccionarComercio(c)}
               title={c.nombre}
+              icon={{
+                path: window.google.maps.SymbolPath.CIRCLE,
+                scale: 10,
+                fillColor: '#1e3f72',
+                fillOpacity: 1,
+                strokeColor: '#ffffff',
+                strokeWeight: 2.5,
+              }}
+              zIndex={2}
             />
           ) : null
         )}
 
-        {/* InfoWindow al seleccionar */}
+        {/* InfoWindow — comercio de la plataforma */}
         {seleccionado && (
           <InfoWindowF
             position={{ lat: seleccionado.lat, lng: seleccionado.lng }}
             onCloseClick={() => setSeleccionado(null)}
           >
-            <div style={{ minWidth: 200, fontFamily: 'Inter, sans-serif' }}>
-              <p style={{ fontWeight: 600, fontSize: 15, color: '#162d54', marginBottom: 2 }}>
+            <div style={{ minWidth: 200, fontFamily: 'system-ui, sans-serif' }}>
+              <p style={{ fontWeight: 700, fontSize: 15, color: '#1e3f72', marginBottom: 2 }}>
                 {seleccionado.nombre}
               </p>
               {seleccionado.categoria && (
                 <p style={{ fontSize: 12, color: '#6b7280', marginBottom: 4 }}>
-                  {seleccionado.categoria}
+                  {seleccionado.categoria.charAt(0).toUpperCase() + seleccionado.categoria.slice(1)}
                 </p>
               )}
               {seleccionado.direccion_texto && (
@@ -154,6 +264,64 @@ export default function MapaPage() {
               >
                 Ver más →
               </button>
+            </div>
+          </InfoWindowF>
+        )}
+
+        {/* InfoWindow — lugar de Google Maps */}
+        {seleccionadoGoogle && (
+          <InfoWindowF
+            position={{
+              lat: seleccionadoGoogle.geometry.location.lat(),
+              lng: seleccionadoGoogle.geometry.location.lng(),
+            }}
+            onCloseClick={() => setSeleccionadoGoogle(null)}
+          >
+            <div style={{ minWidth: 200, fontFamily: 'system-ui, sans-serif' }}>
+              <p style={{ fontWeight: 700, fontSize: 15, color: '#1f2937', marginBottom: 2 }}>
+                {seleccionadoGoogle.name}
+              </p>
+              <p style={{ fontSize: 12, color: '#6b7280', marginBottom: 4 }}>
+                {formatearTipos(seleccionadoGoogle.types)}
+              </p>
+              {seleccionadoGoogle.rating != null && (
+                <p style={{ fontSize: 13, color: '#d97706', marginBottom: 4 }}>
+                  {estrellas(seleccionadoGoogle.rating)}{' '}
+                  <span style={{ color: '#6b7280' }}>
+                    {seleccionadoGoogle.rating.toFixed(1)}
+                    {seleccionadoGoogle.user_ratings_total
+                      ? ` (${seleccionadoGoogle.user_ratings_total})`
+                      : ''}
+                  </span>
+                </p>
+              )}
+              {seleccionadoGoogle.vicinity && (
+                <p style={{ fontSize: 13, color: '#4b5563', marginBottom: 8 }}>
+                  {seleccionadoGoogle.vicinity}
+                </p>
+              )}
+              <a
+                href={`https://www.google.com/maps/place/?q=place_id:${seleccionadoGoogle.place_id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  display: 'block',
+                  width: '100%',
+                  padding: '8px 12px',
+                  borderRadius: 8,
+                  background: '#f3f4f6',
+                  color: '#374151',
+                  fontSize: 13,
+                  fontWeight: 600,
+                  border: '1px solid #e5e7eb',
+                  cursor: 'pointer',
+                  textDecoration: 'none',
+                  textAlign: 'center',
+                  boxSizing: 'border-box',
+                }}
+              >
+                Ver en Google Maps →
+              </a>
             </div>
           </InfoWindowF>
         )}

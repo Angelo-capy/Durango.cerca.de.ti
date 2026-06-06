@@ -4,6 +4,9 @@ import { Locate, MapPin } from 'lucide-react';
 
 const DURANGO_CENTER = { lat: 24.0277, lng: -104.6532 };
 
+// Debe coincidir con el LIBRARIES de MapaPage para que el singleton no conflictúe
+const LIBRARIES = ['places'];
+
 const ESTILOS_MAPA = [
   { featureType: 'poi', stylers: [{ visibility: 'off' }] },
   { featureType: 'transit', stylers: [{ visibility: 'off' }] },
@@ -17,6 +20,7 @@ export default function MiniMapaUbicacion({ lat, lng, onChange }) {
   const { isLoaded } = useJsApiLoader({
     googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '',
     language: 'es',
+    libraries: LIBRARIES,
   });
 
   const inicial =
