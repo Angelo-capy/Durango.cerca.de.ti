@@ -16,8 +16,8 @@ Una plataforma donde los ciudadanos pueden descubrir negocios locales cerca de e
 | Backend | Node.js + Express 5 |
 | Base de datos | PostgreSQL + Knex.js (migraciones y seeds) |
 | Autenticación | Google OAuth 2.0 (`@react-oauth/google` + `google-auth-library`) |
-| Mapas | Google Maps JavaScript API (`@react-google-maps/api`) |
-| IA / Chatbot | Google Gemini 1.5 Flash |
+| Mapas | Google Maps JavaScript API + Places API (`@react-google-maps/api`) |
+| IA / Chatbot | Google Gemini 2.5 Flash |
 | Subida de imágenes | Multer (almacenamiento local, servido como estático) |
 | Enrutamiento | React Router v6 |
 
@@ -26,9 +26,12 @@ Una plataforma donde los ciudadanos pueden descubrir negocios locales cerca de e
 ## Funcionalidades implementadas
 
 ### Para el ciudadano
-- **Mapa interactivo** con marcadores de todos los comercios registrados; al tocar un pin aparece el nombre y categoría.
-- **Chatbot Gemini** (botón flotante) que responde en lenguaje natural preguntas como "¿dónde puedo comprar herramientas baratas?" usando el contexto real de los comercios de la base de datos y la ubicación GPS del usuario.
-- Navegación por tab bar inferior: Inicio, Mapa, Chat, Mi Negocio.
+- **Mapa interactivo** con dos capas de marcadores:
+  - **Azul marino** — comercios registrados en la plataforma; al tocarlos muestra ficha con botón "Ver más".
+  - **Grises** — establecimientos reales de Google Maps (Places API, radio 1 km); al tocarlos muestra nombre, categoría, calificación y enlace directo a Google Maps.
+  - Leyenda visual en el mapa para distinguir ambos tipos.
+- **Chatbot Gemini 2.5 Flash** (botón flotante) que responde en lenguaje natural preguntas como "¿dónde puedo comprar herramientas baratas?" usando el contexto real de los comercios de la base de datos y la ubicación GPS del usuario.
+- Navegación por tab bar inferior: Inicio, Comercios, Mi Negocio.
 
 ### Para el comerciante
 - **Login con Google** — sin contraseña, un solo toque.
@@ -75,7 +78,7 @@ backend/
 1. El ciudadano escribe en lenguaje natural y el frontend envía la pregunta + coordenadas GPS.
 2. El backend consulta todos los comercios de la base de datos.
 3. Construye un prompt contextualizado: ubicación del usuario + lista de comercios + pregunta.
-4. Gemini 1.5 Flash responde recomendando los negocios más relevantes con explicación.
+4. Gemini 2.5 Flash responde recomendando los negocios más relevantes con explicación.
 5. La respuesta se cachea para no agotar la cuota durante la demo.
 
 ---
@@ -111,7 +114,7 @@ VITE_GOOGLE_MAPS_API_KEY=<api_key_de_google_maps>
 ### Requisitos previos
 - Node.js 18+
 - PostgreSQL corriendo localmente
-- Cuenta de Google Cloud con Maps API, OAuth y Gemini API habilitadas
+- Cuenta de Google Cloud con **Maps JavaScript API**, **Places API**, **OAuth 2.0** y **Gemini API** habilitadas
 
 ### Backend
 ```bash
