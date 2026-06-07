@@ -1,8 +1,10 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { Send, Bot, User, X, MapPin } from 'lucide-react';
+import { Send, Bot, User, X, MapPin, Mic, MicOff } from 'lucide-react';
 import { useComerciosList } from '../context/ComerciosContext.jsx';
 import { enviarChat } from '../services/api.js';
+
+const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
 
 function extraerMencionados(texto, comercios) {
   if (!comercios.length || !texto) return [];
@@ -93,6 +95,8 @@ export default function ChatPanel({ onCerrar }) {
   }]);
   const [input, setInput] = useState('');
   const [pensando, setPensando] = useState(false);
+  const [escuchando, setEscuchando] = useState(false);
+  const [vozNoSoportada, setVozNoSoportada] = useState(false);
   const [ubicacion, setUbicacion] = useState(null);
   const listaRef = useRef(null);
   const inputRef = useRef(null);
@@ -139,6 +143,51 @@ export default function ChatPanel({ onCerrar }) {
       setPensando(false);
     }
   }, [input, pensando, ubicacion]);
+
+  const reconocimientoRef = useRef(null);
+
+  const iniciarDictado = useCallback(() => {
+    if (!SpeechRecognitionAPI) {
+      setVozNoSoportada(true);
+      return;
+    }
+    const recognition = new SpeechRecognitionAPI();
+    recognition.lang = 'es-MX';
+    recognition.continuous = false;
+    recognition.interimResults = true;
+
+    recognition.onresult = (event) => {
+      const transcript = Array.from(event.results)
+        .map(r => r[0].transcript)
+        .join('');
+      setInput(transcript);
+    };
+
+    recognition.onerror = () => {
+      setEscuchando(false);
+    };
+
+    recognition.onend = () => {
+      setEscuchando(false);
+    };
+
+    reconocimientoRef.current = recognition;
+    recognition.start();
+    setEscuchando(true);
+  }, []);
+
+  const detenerDictado = useCallback(() => {
+    reconocimientoRef.current?.stop();
+    setEscuchando(false);
+  }, []);
+
+  const toggleDictado = useCallback(() => {
+    if (escuchando) {
+      detenerDictado();
+    } else {
+      iniciarDictado();
+    }
+  }, [escuchando, iniciarDictado, detenerDictado]);
 
   function handleKey(e) {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -200,26 +249,56 @@ export default function ChatPanel({ onCerrar }) {
         {/* Input */}
         <div className="px-4 py-3 bg-white border-t border-gray-100">
           <div className="flex items-end gap-2">
-            <textarea
-              ref={inputRef}
-              value={input}
-              onChange={e => setInput(e.target.value)}
-              onKeyDown={handleKey}
-              placeholder="¿Qué buscas en Durango?"
-              rows={1}
-              className="
-                flex-1 resize-none
-                bg-gray-100 rounded-2xl
-                px-4 py-3
-                text-[17px] text-gray-800
-                placeholder-gray-400
-                focus:outline-none focus:ring-2 focus:ring-navy-300
-                transition-shadow
-                max-h-28 overflow-y-auto
-              "
-              disabled={pensando}
-              aria-label="Escribe tu pregunta"
-            />
+            <div className="flex-1 relative">
+              <textarea
+                ref={inputRef}
+                value={input}
+                onChange={e => setInput(e.target.value)}
+                onKeyDown={handleKey}
+                placeholder="¿Qué buscas en Durango?"
+                rows={1}
+                className="
+                  w-full resize-none
+                  bg-gray-100 rounded-2xl
+                  px-4 py-3 pr-12
+                  text-[17px] text-gray-800
+                  placeholder-gray-400
+                  focus:outline-none focus:ring-2 focus:ring-navy-300
+                  transition-shadow
+                  max-h-28 overflow-y-auto
+                "
+                disabled={pensando}
+                aria-label="Escribe tu pregunta"
+              />
+              {SpeechRecognitionAPI && (
+                <button
+                  onClick={toggleDictado}
+                  disabled={pensando}
+                  className={`
+                    absolute right-1.5 top-1/2 -translate-y-1/2
+                    w-9 h-9 rounded-full
+                    flex items-center justify-center
+                    transition-all duration-200
+                    ${escuchando
+                      ? 'bg-red-500 text-white shadow-lg scale-110 pulse-mic'
+                      : 'bg-gray-200 text-gray-500 hover:bg-gray-300'
+                    }
+                    disabled:opacity-40 disabled:cursor-not-allowed
+                  `}
+                  aria-label={escuchando ? 'Detener dictado por voz' : 'Iniciar dictado por voz'}
+                >
+                  {escuchando
+                    ? <Mic size={16} strokeWidth={2.5} aria-hidden="true" />
+                    : <MicOff size={16} strokeWidth={2} aria-hidden="true" />
+                  }
+                </button>
+              )}
+              {vozNoSoportada && (
+                <span className="absolute right-1.5 bottom-1.5 text-[11px] text-gray-400 px-1">
+                  voz no disponible
+                </span>
+              )}
+            </div>
             <button
               onClick={enviar}
               disabled={!input.trim() || pensando}
