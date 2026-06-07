@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
+import { useComerciosList } from '../context/ComerciosContext.jsx';
 import { crearComercio, editarComercio, subirImagen } from '../services/api.js';
 import { ArrowLeft, Save, Upload, Trash2, Image as ImageIcon } from 'lucide-react';
 import MiniMapaUbicacion from '../components/MiniMapaUbicacion.jsx';
@@ -33,6 +34,7 @@ export default function EditarComercioPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
+  const { recargar } = useComerciosList();
   const comercioExistente = location.state?.comercio || null;
 
   const [form, setForm] = useState({
@@ -90,8 +92,8 @@ export default function EditarComercioPage() {
 
     const payload = {
       ...form,
-      lat: form.lat !== '' ? parseFloat(form.lat) : null,
-      lng: form.lng !== '' ? parseFloat(form.lng) : null,
+      lat: form.lat !== '' && form.lat != null ? parseFloat(form.lat) : null,
+      lng: form.lng !== '' && form.lng != null ? parseFloat(form.lng) : null,
       owner_google_id: user?.sub || user?.google_id,
     };
 
@@ -101,6 +103,7 @@ export default function EditarComercioPage() {
       } else {
         await crearComercio(payload);
       }
+      recargar();
       navigate('/mi-comercio');
     } catch (err) {
       setErrorGeneral(err.message || 'No pudimos guardar. Intenta de nuevo.');
@@ -109,8 +112,14 @@ export default function EditarComercioPage() {
     }
   }
 
-  function actualizarUbicacion({ lat, lng }) {
-    setForm(prev => ({ ...prev, lat, lng }));
+  function actualizarUbicacion({ lat, lng, direccion_texto }) {
+    setForm(prev => ({
+      ...prev,
+      lat,
+      lng,
+      // Solo sobrescribir si el geocoder devolvió algo; preservamos lo que el usuario haya escrito
+      ...(direccion_texto ? { direccion_texto } : {}),
+    }));
   }
 
   async function handleFotoChange(e) {
@@ -213,8 +222,20 @@ export default function EditarComercioPage() {
         </Campo>
 
         <Campo
+          label="Ubicación en el mapa"
+          descripcion="Arrastra el pin o toca el mapa para colocarlo justo donde está tu negocio."
+        >
+          <MiniMapaUbicacion
+            lat={form.lat}
+            lng={form.lng}
+            direccionPadre={form.direccion_texto}
+            onChange={actualizarUbicacion}
+          />
+        </Campo>
+
+        <Campo
           label="Dirección"
-          descripcion="Escribe la calle, número y colonia para que los clientes te encuentren."
+          descripcion="La detectamos automáticamente al colocar el pin. Puedes corregirla si hace falta."
         >
           <input
             type="text"
@@ -222,17 +243,6 @@ export default function EditarComercioPage() {
             onChange={e => set('direccion_texto', e.target.value)}
             placeholder="Ej. Calle Constitución 123, Centro, Durango"
             className={`${ESTILO_INPUT} min-h-[52px]`}
-          />
-        </Campo>
-
-        <Campo
-          label="Ubicación en el mapa"
-          descripcion="Arrastra el pin o toca el mapa para colocarlo justo donde está tu negocio."
-        >
-          <MiniMapaUbicacion
-            lat={form.lat}
-            lng={form.lng}
-            onChange={actualizarUbicacion}
           />
         </Campo>
 

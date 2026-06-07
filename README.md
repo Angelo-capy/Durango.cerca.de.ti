@@ -36,8 +36,8 @@ Una plataforma donde los ciudadanos pueden descubrir negocios locales cerca de e
 ### Para el comerciante
 - **Login con Google** — sin contraseña, un solo toque.
 - **Formulario de registro y edición de negocio** con:
-  - Nombre, descripción (hasta 280 caracteres), categoría, dirección en texto.
-  - **Mini-mapa con pin arrastrable** para ubicar el negocio con precisión.
+  - Nombre, descripción (hasta 280 caracteres), categoría.
+  - **Mini-mapa con pin arrastrable** para ubicar el negocio con precisión. Al mover el pin, la **dirección se autocompleta** vía reverse geocoding (Geocoding API → `formatted_address`), con fallback automático a Places API (`vicinity`) si la primera falla. El usuario siempre puede editar la dirección manualmente.
   - Horario en formato libre.
   - Datos de contacto: WhatsApp (validado a 10 dígitos), correo y nombre de usuario de Instagram.
   - **Subida de foto de perfil desde el dispositivo** (JPG/PNG/WebP, hasta 5 MB).
@@ -114,7 +114,7 @@ VITE_GOOGLE_MAPS_API_KEY=<api_key_de_google_maps>
 ### Requisitos previos
 - Node.js 18+
 - PostgreSQL corriendo localmente
-- Cuenta de Google Cloud con **Maps JavaScript API**, **Places API**, **OAuth 2.0** y **Gemini API** habilitadas
+- Cuenta de Google Cloud con **Maps JavaScript API**, **Places API**, **Geocoding API**, **OAuth 2.0** y **Gemini API** habilitadas
 
 ### Backend
 ```bash

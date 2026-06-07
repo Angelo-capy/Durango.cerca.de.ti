@@ -82,23 +82,40 @@ export default function MapaPage() {
       pos => {
         const pos2 = { lat: pos.coords.latitude, lng: pos.coords.longitude };
         setUbicacion(pos2);
-        mapRef.current?.panTo(pos2);
         if (placesServiceRef.current) {
           buscarLugaresCercanos(placesServiceRef.current, pos2);
         }
       },
       () => {
         setMensajeGeo('No encontramos tu ubicación. El mapa muestra el centro de Durango.');
-      }
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     );
   }, []);
+
+  // Pan-ea el mapa a la ubicación del usuario cuando ambos (mapa + ubicación) estén listos.
+  // Necesario porque el callback de geolocalización puede resolver antes de que el mapa cargue,
+  // o el mapa puede cargar antes de que llegue la ubicación.
+  useEffect(() => {
+    if (ubicacion && mapRef.current) {
+      mapRef.current.panTo(ubicacion);
+      mapRef.current.setZoom(16);
+    }
+  }, [ubicacion]);
 
   const onMapLoad = useCallback(map => {
     mapRef.current = map;
     const service = new window.google.maps.places.PlacesService(map);
     placesServiceRef.current = service;
-    buscarLugaresCercanos(service, DURANGO_CENTER);
-  }, []);
+    // Si ya teníamos ubicación antes de que el mapa cargara, centramos ahí y buscamos lugares cercanos
+    if (ubicacion) {
+      map.panTo(ubicacion);
+      map.setZoom(16);
+      buscarLugaresCercanos(service, ubicacion);
+    } else {
+      buscarLugaresCercanos(service, DURANGO_CENTER);
+    }
+  }, [ubicacion]);
 
   function seleccionarComercio(c) {
     setSeleccionadoGoogle(null);
